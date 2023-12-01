@@ -4,6 +4,7 @@ from loguru import logger
 from request import GenerateRequest
 import asyncio
 import httpx
+import json
 
 
 class AspectRatio(str, Enum):
@@ -120,8 +121,10 @@ async def send_req(host: str, req: GenerateRequest, sub_folder: str = ""):
     async with httpx.AsyncClient(timeout=60) as client:
         host = f"http://{host}/gen" if not host.startswith("http") else host
         dump = req.model_dump()
-        dump["extra_infos"] = "{}"
-        dump["sub_folder"] = sub_folder
+        extra_infos = {}
+        if sub_folder is not None:
+            extra_infos["save_folder"] = sub_folder
+        dump["extra_infos"] = json.dumps(extra_infos)
         resp = await client.post(host, json=dump)
         media_type = resp.headers["Content-Type"]
         is_img = media_type.startswith("image")

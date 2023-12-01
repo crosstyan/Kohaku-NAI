@@ -99,10 +99,7 @@ async def gen(context: GenerateRequest, request: Request):
     is_free_gen = free_check(context.width, context.height, context.steps)
 
     save_path = request.session.get("save_path", server_config["save_path"])
-    if request.session.get("custom_sub_folder", False):
-        sub_folder = context.img_sub_folder or extra_infos.get("save_folder", "")
-    else:
-        sub_folder = ""
+    sub_folder = context.img_sub_folder or extra_infos.get("save_folder", "")
     safe_folder_name = re.sub(r"[^\w\-_\. ]", "_", sub_folder)
 
     if (not is_signed and (is_always_require_auth or not is_free_gen)) or (
