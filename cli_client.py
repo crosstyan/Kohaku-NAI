@@ -139,7 +139,7 @@ def main(
     # asyncio.run(send_req(host, req, sub_folder))
     total_timeout = batch_count * 30
 
-    async def run():
+    async def run() -> list[Result[bytes, GenError]]:
         promise = asyncio.gather(*[
             send_req(host, req, sub_folder, total_timeout)
             for _ in range(batch_count)
@@ -147,7 +147,13 @@ def main(
         await promise
         return promise.result()
 
-    asyncio.run(run())
+    results = asyncio.run(run())
+    for result in results:
+        match result:
+            case Ok(_):
+                pass
+            case Err(err):
+                logger.error(f"Error: {err.error}")
 
 
 @dataclass
