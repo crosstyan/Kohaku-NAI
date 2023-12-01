@@ -5,7 +5,6 @@ from request import GenerateRequest
 import asyncio
 import httpx
 import json
-from concurrent.futures import ProcessPoolExecutor
 
 
 class AspectRatio(str, Enum):
@@ -25,15 +24,12 @@ ar_map: dict[AspectRatio, tuple[int, int]] = {
 
 
 @click.command()
-@click.option("--prompt", "-p", default="1girl", help="Prompt to generate from")
-@click.option("--negative",
-              "-n",
-              default="bad quality",
-              help="Negative prompt to generate from")
-@click.option("--seed", "-s", default=-1, help="Seed to generate from")
-@click.option("--scale", "-S", default=5.0, help="Scale to generate from")
-@click.option("--width", "-w", help="Width to generate from")
-@click.option("--height", "-h", help="Height to generate from")
+@click.option("--prompt", "-p", default="1girl", help="Prompt")
+@click.option("--negative", "-n", default="bad quality", help="Negative prompt")
+@click.option("--seed", "-s", default=-1, help="Seed")
+@click.option("--scale", "-S", default=5.0, help="Scale, should be cfg scale")
+@click.option("--width", "-w", help="Width")
+@click.option("--height", "-h", help="Height")
 @click.option("--steps", "-t", default=28, help="Steps")
 @click.option(
     "--sampler",
@@ -50,12 +46,29 @@ ar_map: dict[AspectRatio, tuple[int, int]] = {
     ]),
 )
 @click.option("--schedule", default="native", help="Schedule")
-@click.option("--smea", is_flag=True, help="SMEA for sampler")
-@click.option("--dyn", is_flag=True, help="Dyn for sampler")
-@click.option("--dyn-threshold", is_flag=True, help="Dyn threshold for sampler")
+@click.option("--smea",
+              is_flag=True,
+              help="""
+    Sinusoidal Multipass Euler Ancestral (SMEA) is a new sampler developed with
+    the goal of improving overall coherency and quality, especially at higher
+    resolutions.
+    """)
+@click.option("--dyn",
+              is_flag=True,
+              help="""
+    SMEA DYN focuses less time on lower generations and begins to shine dynamically
+    in the mid to high range of a generation. 
+              """)
+@click.option("--dyn-threshold", is_flag=True, help="Dyn threshold")
 @click.option("--cfg-rescale", default=0, help="CFG rescale")
-@click.option("--sub-folder", default="", help="Sub folder to save to")
-@click.option("--ar", type=click.Choice(AspectRatio))
+@click.option("--sub-folder",
+              default="",
+              help="Sub folder to save to, if permitted")
+@click.option("--ar",
+              type=click.Choice(AspectRatio),
+              help="""
+    Aspect ratio preset, would be ignored if width and height are specified
+    """)
 @click.option("--host",
               default="127.0.0.1:7000",
               help="the host (gen server) to connect to")
