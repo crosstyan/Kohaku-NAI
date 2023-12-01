@@ -5,6 +5,7 @@ from request import GenerateRequest
 import asyncio
 import httpx
 import json
+from concurrent.futures import ProcessPoolExecutor
 
 
 class AspectRatio(str, Enum):
@@ -25,9 +26,10 @@ ar_map: dict[AspectRatio, tuple[int, int]] = {
 
 @click.command()
 @click.option("--prompt", "-p", default="1girl", help="Prompt to generate from")
-@click.option(
-    "--negative", "-n", default="bad quality", help="Negative prompt to generate from"
-)
+@click.option("--negative",
+              "-n",
+              default="bad quality",
+              help="Negative prompt to generate from")
 @click.option("--seed", "-s", default=-1, help="Seed to generate from")
 @click.option("--scale", "-S", default=5.0, help="Scale to generate from")
 @click.option("--width", "-w", help="Width to generate from")
@@ -38,16 +40,14 @@ ar_map: dict[AspectRatio, tuple[int, int]] = {
     "-m",
     default="k_euler",
     help="Sampler",
-    type=click.Choice(
-        [
-            "k_euler",
-            "k_euler_ancestral",
-            "k_dpmpp_2s_ancestral",
-            "k_dpmpp_2m",
-            "k_dpmpp_sde",
-            "ddim_v3",
-        ]
-    ),
+    type=click.Choice([
+        "k_euler",
+        "k_euler_ancestral",
+        "k_dpmpp_2s_ancestral",
+        "k_dpmpp_2m",
+        "k_dpmpp_sde",
+        "ddim_v3",
+    ]),
 )
 @click.option("--schedule", default="native", help="Schedule")
 @click.option("--smea", is_flag=True, help="SMEA for sampler")
@@ -56,9 +56,13 @@ ar_map: dict[AspectRatio, tuple[int, int]] = {
 @click.option("--cfg-rescale", default=0, help="CFG rescale")
 @click.option("--sub-folder", default="", help="Sub folder to save to")
 @click.option("--ar", type=click.Choice(AspectRatio))
-@click.option(
-    "--host", default="127.0.0.1:7000", help="the host (gen server) to connect to"
-)
+@click.option("--host",
+              default="127.0.0.1:7000",
+              help="the host (gen server) to connect to")
+@click.option("--batch-count",
+              "-b",
+              default=1,
+              help="the number of butches to generate")
 @click.option("--auth", help="the auth password to use")
 def main(
     prompt: str,
@@ -77,6 +81,7 @@ def main(
     ar: AspectRatio | None,
     host: str,
     sub_folder: str,
+    batch_count: int,
     auth: str | None,
 ):
     if auth is not None:
@@ -85,12 +90,14 @@ def main(
     h = height
     if ar is not None:
         if w is not None and h is not None:
-            logger.warning("Both width and height are specified, ignoring aspect ratio")
+            logger.warning(
+                "Both width and height are specified, ignoring aspect ratio")
         else:
             w, h = ar_map[ar]
             logger.info(f"Using aspect ratio {ar.name} ({w}x{h})")
     if w is None or h is None:
-        logger.warning("Width or height is not specified, using default 1024x1024")
+        logger.warning(
+            "Width or height is not specified, using default 1024x1024")
         w = 1024
         h = 1024
     smea_t = " smea" if smea else ""
@@ -114,11 +121,24 @@ def main(
         dyn_threshold=dyn_threshold,
         cfg_rescale=cfg_rescale,
     )
-    asyncio.run(send_req(host, req, sub_folder))
+    # asyncio.run(send_req(host, req, sub_folder))
+    total_timeout = batch_count * 30
+
+    async def run():
+        promise = asyncio.gather(*[
+            send_req(host, req, sub_folder, total_timeout)
+            for _ in range(batch_count)
+        ])
+        await promise
+
+    asyncio.run(run())
 
 
-async def send_req(host: str, req: GenerateRequest, sub_folder: str = ""):
-    async with httpx.AsyncClient(timeout=60) as client:
+async def send_req(host: str,
+                   req: GenerateRequest,
+                   sub_folder: str = "",
+                   timeout=60):
+    async with httpx.AsyncClient(timeout=timeout) as client:
         host = f"http://{host}/gen" if not host.startswith("http") else host
         dump = req.model_dump()
         extra_infos = {}
