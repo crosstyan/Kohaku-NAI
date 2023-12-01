@@ -5,6 +5,8 @@ from request import GenerateRequest
 import asyncio
 import httpx
 import json
+from dataclasses import dataclass
+from result import Result, Ok, Err
 
 
 class AspectRatio(str, Enum):
@@ -143,14 +145,21 @@ def main(
             for _ in range(batch_count)
         ])
         await promise
+        return promise.result()
 
     asyncio.run(run())
+
+
+@dataclass
+class GenError:
+    error: str
+    status_code: int
 
 
 async def send_req(host: str,
                    req: GenerateRequest,
                    sub_folder: str = "",
-                   timeout=60):
+                   timeout=60) -> Result[bytes, GenError]:
     async with httpx.AsyncClient(timeout=timeout) as client:
         host = f"http://{host}/gen" if not host.startswith("http") else host
         dump = req.model_dump()
@@ -159,13 +168,12 @@ async def send_req(host: str,
             extra_infos["save_folder"] = sub_folder
         dump["extra_infos"] = json.dumps(extra_infos)
         resp = await client.post(host, json=dump)
-        media_type = resp.headers["Content-Type"]
+        media_type = resp.headers.get("Content-Type", "")
         is_img = media_type.startswith("image")
         if not is_img:
-            logger.info("Response: {}", resp.text)
+            return Err(GenError(resp.text, resp.status_code))
         else:
-            logger.info("success")
-        resp.raise_for_status()
+            return Ok(resp.content)
 
 
 if __name__ == "__main__":
