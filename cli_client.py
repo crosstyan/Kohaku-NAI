@@ -6,6 +6,8 @@ import asyncio
 import httpx
 import json
 from dataclasses import dataclass
+from wildcard import get_tags, process_prompt
+from pathlib import Path
 from result import Result, Ok, Err
 
 
@@ -66,6 +68,11 @@ ar_map: dict[AspectRatio, tuple[int, int]] = {
 @click.option("--sub-folder",
               default="",
               help="Sub folder to save to, if permitted")
+@click.option("--wildcard-dir",
+              "-W",
+              default=None,
+              help="Wildcard dir",
+              type=click.Path())
 @click.option("--ar",
               type=click.Choice(AspectRatio),
               help="""
@@ -96,9 +103,15 @@ def main(
     ar: AspectRatio | None,
     host: str,
     sub_folder: str,
+    wildcard_dir: str,
     batch_count: int,
     auth: str | None,
 ):
+    if wildcard_dir is not None:
+        assert Path(wildcard_dir).exists(), "Wildcard dir must exist"
+        assert Path(wildcard_dir).is_dir(), "Wildcard dir must be a directory"
+        prompt = process_prompt(prompt, lambda x: get_tags(wildcard_dir, x))
+        logger.info("processed prompt: {}".format(prompt))
     if auth is not None:
         raise NotImplementedError("Auth is not implemented yet")
     w = width
