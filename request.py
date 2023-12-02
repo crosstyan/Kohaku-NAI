@@ -1,5 +1,10 @@
+from typing import Literal
 from pydantic import BaseModel
 
+ScheduleType = Literal["native", "karras", "exponential", "polyexponential"]
+
+SamplerType = Literal["k_euler", "k_euler_ancestral", "k_dpmpp_2s_ancestral",
+                      "k_dpmpp_2m", "k_dpmpp_sde", "ddim_v3"]
 
 class GenerateRequest(BaseModel):
     prompt: str
@@ -9,8 +14,8 @@ class GenerateRequest(BaseModel):
     width: int
     height: int
     steps: int
-    sampler: str
-    schedule: str
+    sampler: SamplerType
+    schedule: ScheduleType
     smea: bool = False
     dyn: bool = False
     dyn_threshold: bool = False
