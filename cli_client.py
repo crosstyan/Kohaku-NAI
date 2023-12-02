@@ -35,21 +35,23 @@ ar_map: dict[AspectRatio, tuple[int, int]] = {
 @click.option("--width", "-w", help="Width")
 @click.option("--height", "-h", help="Height")
 @click.option("--steps", "-t", default=28, help="Steps")
-@click.option(
-    "--sampler",
-    "-m",
-    default="k_euler",
-    help="Sampler",
-    type=click.Choice([
-        "k_euler",
-        "k_euler_ancestral",
-        "k_dpmpp_2s_ancestral",
-        "k_dpmpp_2m",
-        "k_dpmpp_sde",
-        "ddim_v3",
-    ]),
-)
-@click.option("--schedule", default="native", help="Schedule")
+@click.option("--sampler",
+              "-m",
+              default="k_euler",
+              help="Sampler",
+              type=click.Choice([
+                  "k_euler",
+                  "k_euler_ancestral",
+                  "k_dpmpp_2s_ancestral",
+                  "k_dpmpp_2m",
+                  "k_dpmpp_sde",
+                  "ddim_v3",
+              ]))
+@click.option("--schedule",
+              default="native",
+              help="Schedule",
+              type=click.Choice(
+                  ["native", "karras", "exponential", "polyexponential"]))
 @click.option("--smea",
               is_flag=True,
               help="""
