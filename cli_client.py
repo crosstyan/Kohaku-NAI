@@ -159,32 +159,28 @@ def main(
     total_timeout = batch_count * 30
 
     async def run() -> list[Result[bytes, GenError]]:
-        prompts = [prompt] * batch_count
-        if wildcard_dir is not None:
-            assert Path(wildcard_dir).exists(), "Wildcard dir must exist"
-            assert Path(
-                wildcard_dir).is_dir(), "Wildcard dir must be a directory"
-            if same_prompt:
-                new_prompt = process_prompt(prompt,
-                                            lambda x: get_tags(wildcard_dir, x),
-                                            wildcard_recursive)
-                prompts = [new_prompt] * batch_count
-                logger.info("processed prompt: {}".format(new_prompt))
-            else:
-                prompts = list(
-                    map(
-                        lambda x: process_prompt(
-                            x, lambda x: get_tags(
-                                wildcard_dir, x, wildcard_recursive)), prompts))
-                logger.info("processed prompts: {}".format(prompts))
 
-        def conv(pair: tuple[str, GenerateRequest]):
-            p, req = pair
+        def conv(req: GenerateRequest):
+            p = req.prompt
+            if wildcard_dir is not None:
+                assert Path(wildcard_dir).exists(), "Wildcard dir must exist"
+                assert Path(
+                    wildcard_dir).is_dir(), "Wildcard dir must be a directory"
+                p = process_prompt(
+                    p, lambda x: get_tags(wildcard_dir, x, wildcard_recursive))
             req_new = req.model_copy()
             req_new.prompt = p
             return req_new
 
-        reqs = list(map(conv, zip(prompts, [req] * batch_count)))
+        reqs: list[GenerateRequest] = []
+        if same_prompt:
+            new_req = conv(req)
+            logger.info(f"Using prompt: {new_req.prompt}")
+            reqs = [new_req] * batch_count
+        else:
+            reqs = list(map(conv, [req] * batch_count))
+            prompts = list(map(lambda x: x.prompt, reqs))
+            logger.info(f"Using prompts: {prompts}")
         promise = asyncio.gather(*[
             send_req(host, req, sub_folder, timeout=total_timeout)
             for req in reqs
