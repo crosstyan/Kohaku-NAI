@@ -73,6 +73,10 @@ ar_map: dict[AspectRatio, tuple[int, int]] = {
               default=None,
               help="Wildcard dir",
               type=click.Path())
+@click.option("--same-prompt",
+              "-P",
+              is_flag=True,
+              help="Use the same prompt for all batches, when using wildcard")
 @click.option("--ar",
               type=click.Choice(AspectRatio),
               help="""
@@ -104,14 +108,10 @@ def main(
     host: str,
     sub_folder: str,
     wildcard_dir: str,
+    same_prompt: bool,
     batch_count: int,
     auth: str | None,
 ):
-    if wildcard_dir is not None:
-        assert Path(wildcard_dir).exists(), "Wildcard dir must exist"
-        assert Path(wildcard_dir).is_dir(), "Wildcard dir must be a directory"
-        prompt = process_prompt(prompt, lambda x: get_tags(wildcard_dir, x))
-        logger.info("processed prompt: {}".format(prompt))
     if auth is not None:
         raise NotImplementedError("Auth is not implemented yet")
     w = width
@@ -149,13 +149,36 @@ def main(
         dyn_threshold=dyn_threshold,
         cfg_rescale=cfg_rescale,
     )
-    # asyncio.run(send_req(host, req, sub_folder))
     total_timeout = batch_count * 30
 
     async def run() -> list[Result[bytes, GenError]]:
+        prompts = [prompt] * batch_count
+        if wildcard_dir is not None:
+            assert Path(wildcard_dir).exists(), "Wildcard dir must exist"
+            assert Path(
+                wildcard_dir).is_dir(), "Wildcard dir must be a directory"
+            if same_prompt:
+                new_prompt = process_prompt(prompt,
+                                            lambda x: get_tags(wildcard_dir, x))
+                prompts = [new_prompt] * batch_count
+                logger.info("processed prompt: {}".format(new_prompt))
+            else:
+                prompts = list(
+                    map(
+                        lambda x: process_prompt(
+                            x, lambda x: get_tags(wildcard_dir, x)), prompts))
+                logger.info("processed prompts: {}".format(prompts))
+
+        def conv(pair: tuple[str, GenerateRequest]):
+            p, req = pair
+            req_new = req.model_copy()
+            req_new.prompt = p
+            return req_new
+
+        reqs = list(map(conv, zip(prompts, [req] * batch_count)))
         promise = asyncio.gather(*[
-            send_req(host, req, sub_folder, total_timeout)
-            for _ in range(batch_count)
+            send_req(host, req, sub_folder, timeout=total_timeout)
+            for req in reqs
         ])
         await promise
         return promise.result()
