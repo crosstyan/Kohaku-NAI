@@ -24,7 +24,7 @@ def get_tags(base_dir: Path, key: str, cache=True) -> Optional[list[str]]:
     return None
 
 
-def process_prompt(prompt: str, getter: TagGetter):
+def process_prompt(prompt: str, getter: TagGetter, recursive=False):
     wildcard_format = re.compile(r"__([^_]+)__")
     if prompt.strip() == "":
         return prompt
@@ -36,4 +36,11 @@ def process_prompt(prompt: str, getter: TagGetter):
             return f"__{key}__"
         return choice(lines).strip()
 
-    return wildcard_format.sub(replace, prompt)
+    if recursive:
+        while True:
+            new_prompt = wildcard_format.sub(replace, prompt)
+            if new_prompt == prompt:
+                return new_prompt
+            prompt = new_prompt
+    else:
+        return wildcard_format.sub(replace, prompt)

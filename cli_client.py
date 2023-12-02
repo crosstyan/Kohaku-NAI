@@ -77,6 +77,10 @@ ar_map: dict[AspectRatio, tuple[int, int]] = {
               "-P",
               is_flag=True,
               help="Use the same prompt for all batches, when using wildcard")
+@click.option("--wildcard-recursive",
+              "-R",
+              is_flag=True,
+              help="Replace wildcard recursively, good for nested wildcard")
 @click.option("--ar",
               type=click.Choice(AspectRatio),
               help="""
@@ -109,6 +113,7 @@ def main(
     sub_folder: str,
     wildcard_dir: str,
     same_prompt: bool,
+    wildcard_recursive: bool,
     batch_count: int,
     auth: str | None,
 ):
@@ -159,14 +164,16 @@ def main(
                 wildcard_dir).is_dir(), "Wildcard dir must be a directory"
             if same_prompt:
                 new_prompt = process_prompt(prompt,
-                                            lambda x: get_tags(wildcard_dir, x))
+                                            lambda x: get_tags(wildcard_dir, x),
+                                            wildcard_recursive)
                 prompts = [new_prompt] * batch_count
                 logger.info("processed prompt: {}".format(new_prompt))
             else:
                 prompts = list(
                     map(
                         lambda x: process_prompt(
-                            x, lambda x: get_tags(wildcard_dir, x)), prompts))
+                            x, lambda x: get_tags(
+                                wildcard_dir, x, wildcard_recursive)), prompts))
                 logger.info("processed prompts: {}".format(prompts))
 
         def conv(pair: tuple[str, GenerateRequest]):
