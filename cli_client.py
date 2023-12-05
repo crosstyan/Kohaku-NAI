@@ -26,6 +26,7 @@ ar_map: dict[AspectRatio, tuple[int, int]] = {
     AspectRatio.Vertical: (832, 1216),
     AspectRatio.UltraWide: (1472, 704),
     AspectRatio.UltraTall: (704, 1472),
+    AspectRatio.Square: (1024, 1024),
 }
 
 
