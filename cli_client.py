@@ -5,6 +5,8 @@ from request import GenerateRequest
 import asyncio
 import httpx
 import json
+import time
+import random
 from dataclasses import dataclass
 from wildcard import get_tags, process_prompt
 from pathlib import Path
@@ -88,6 +90,7 @@ ar_map: dict[AspectRatio, tuple[int, int]] = {
               help="""
     Aspect ratio preset, would be ignored if width and height are specified
     """)
+@click.option("--forever", "-F", is_flag=True, help="Generate forever")
 @click.option("--host",
               default="127.0.0.1:7000",
               help="the host (gen server) to connect to")
@@ -111,6 +114,7 @@ def main(
     dyn_threshold: bool,
     cfg_rescale: bool,
     ar: AspectRatio | None,
+    forever: bool,
     host: str,
     sub_folder: str,
     wildcard_dir: str,
@@ -188,13 +192,26 @@ def main(
         await promise
         return promise.result()
 
-    results = asyncio.run(run())
-    for result in results:
-        match result:
-            case Ok(_):
-                pass
-            case Err(err):
-                logger.error(f"Error: {err.error}")
+    def do():
+        results = asyncio.run(run())
+        for result in results:
+            match result:
+                case Ok(_):
+                    pass
+                case Err(err):
+                    logger.error(f"Error: {err.error}")
+
+    min_delay_ms, max_delay_ms = 750, 3000
+    assert min_delay_ms < max_delay_ms
+    if forever:
+        logger.info(f"Generating forever, delay between {min_delay_ms} and {max_delay_ms} ms")
+        while True:
+            do()
+            delay = random.randint(min_delay_ms, max_delay_ms) / 1000
+            logger.info(f"delaying {delay} seconds")
+            time.sleep(delay)
+    else:
+        do()
 
 
 @dataclass
