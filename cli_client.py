@@ -69,7 +69,7 @@ ar_map: dict[AspectRatio, tuple[int, int]] = {
     in the mid to high range of a generation. 
               """)
 @click.option("--dyn-threshold", is_flag=True, help="Dyn threshold")
-@click.option("--cfg-rescale", default=0, help="CFG rescale")
+@click.option("--cfg-rescale", default=0, help="CFG rescale", type=float)
 @click.option("--sub-folder",
               default="",
               help="Sub folder to save to, if permitted")
@@ -113,7 +113,7 @@ def main(
     smea: bool,
     dyn: bool,
     dyn_threshold: bool,
-    cfg_rescale: bool,
+    cfg_rescale: float,
     ar: AspectRatio | None,
     forever: bool,
     host: str,
