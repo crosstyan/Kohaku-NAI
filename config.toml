@@ -1,8 +1,8 @@
 [gen_server]
     host = "0.0.0.0"
     port = 7000
-    max_jobs = 2
-    min_delay = 1.0
+    max_jobs = 1
+    min_delay = 0.1
     save_path = "./data"
     token = ""
     always_require_auth = false

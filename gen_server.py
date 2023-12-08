@@ -174,7 +174,9 @@ def main(config: str):
     server_config = toml.load(config)["gen_server"]
     auth_configs = server_config.get("auth", [])
     set_token(server_config["token"])
-    generate_semaphore = asyncio.Semaphore(server_config["max_jobs"])
+    max_jobs = server_config["max_jobs"]
+    assert max_jobs == 1, "NovelAI has changed their API policy, so no concurrent jobs is allowed."
+    generate_semaphore = asyncio.Semaphore(max_jobs)
     uvicorn.run(app, host=server_config["host"], port=server_config["port"])
 
 

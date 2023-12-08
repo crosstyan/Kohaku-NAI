@@ -7,6 +7,7 @@ import httpx
 import json
 import time
 import random
+import tqdm
 from dataclasses import dataclass
 from wildcard import get_tags, process_prompt
 from pathlib import Path
@@ -202,15 +203,9 @@ def main(
                 case Err(err):
                     logger.error(f"Error: {err.error}")
 
-    min_delay_ms, max_delay_ms = 750, 3000
-    assert min_delay_ms < max_delay_ms
     if forever:
-        logger.info(f"Generating forever, delay between {min_delay_ms} and {max_delay_ms} ms")
         while True:
             do()
-            delay = random.randint(min_delay_ms, max_delay_ms) / 1000
-            logger.info(f"delaying {delay} seconds")
-            time.sleep(delay)
     else:
         do()
 
