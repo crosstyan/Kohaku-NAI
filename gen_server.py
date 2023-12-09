@@ -125,6 +125,7 @@ async def gen(context: GenerateRequest, request: Request):
             context.schedule,
             context.smea,
             context.dyn,
+            context.quality_toggle,
             context.dyn_threshold,
             context.cfg_rescale,
         )

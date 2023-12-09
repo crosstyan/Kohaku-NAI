@@ -146,6 +146,7 @@ async def generate_novelai_image(
     schedule="native",
     smea=False,
     dyn=False,
+    quality_toggle=False,
     dyn_threshold=False,
     cfg_rescale=0,
 ):
@@ -177,7 +178,7 @@ async def generate_novelai_image(
                 else negative_prompt
             ),
             "noise_schedule": schedule,
-            "qualityToggle": True,
+            "qualityToggle": quality_toggle,
             "seed": seed,
             "sm": smea,
             "sm_dyn": dyn,

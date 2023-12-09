@@ -18,6 +18,7 @@ class GenerateRequest(BaseModel):
     schedule: ScheduleType
     smea: bool = False
     dyn: bool = False
+    quality_toggle: bool = False
     dyn_threshold: bool = False
     cfg_rescale: float = 0.0
     img_sub_folder: str = ""
