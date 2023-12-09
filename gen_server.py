@@ -45,21 +45,20 @@ def save_img(save_path: str, sub_folder: str, image: bytes, json: str):
     sub_folder_path = os.path.join(save_path, sub_folder)
     os.makedirs(sub_folder_path, exist_ok=True)
     is_separate_metadata = server_config.get("separate_metadata", False)
-    metadata_dir = "metadatas"
-    if is_separate_metadata:
-        os.makedirs(os.path.join(sub_folder_path, metadata_dir), exist_ok=True)
 
     img_hash = sha3_256(image).hexdigest()
     img_id = next(id_gen)
     img_extension = "png" if server_config.get("save_directly", False) else "webp"
     img_name = f"{img_id}_{img_hash[:8]}.{img_extension}"
-
     with open(os.path.join(sub_folder_path, img_name), "wb") as f:
         f.write(image)
     if is_separate_metadata:
+        metadata_dir_name = "metadata"
+        metadata_path = os.path.join(sub_folder_path, metadata_dir_name)
+        os.makedirs(metadata_path, exist_ok=True)
         metadata_name = f"{img_id}_{img_hash[:8]}.json"
         with open(
-            os.path.join(sub_folder, metadata_dir, metadata_name), "w", encoding="utf-8"
+            os.path.join(metadata_path, metadata_name), "w", encoding="utf-8"
         ) as f:
             f.write(json)
 

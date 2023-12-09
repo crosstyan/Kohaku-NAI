@@ -7,7 +7,7 @@
     token = ""
     always_require_auth = false
     save_directly = false
-    separate_metadata = false
+    separate_metadata = true
     compression_quality = 75
     compression_method = 6
     
