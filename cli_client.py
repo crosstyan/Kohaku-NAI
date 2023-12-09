@@ -162,7 +162,7 @@ def main(
         dyn_threshold=dyn_threshold,
         cfg_rescale=cfg_rescale,
     )
-    total_timeout = batch_count * 30
+    total_timeout = batch_count * 180
 
     async def run() -> list[Result[bytes, GenError]]:
 
@@ -191,7 +191,11 @@ def main(
             send_req(host, req, sub_folder, timeout=total_timeout)
             for req in reqs
         ])
+        now = time.time()
         await promise
+        t = time.time() - now
+        logger.info(f"token: {t:.2f}s" + (
+            f" avg: {t / batch_count:.2f}s" if batch_count > 1 else ""))
         return promise.result()
 
     def do():
