@@ -126,7 +126,7 @@
 # wu_ganlan_cai
 # ying_yi
 
-$artist = "mignon oouso [[aki99]] [[[[[fkey]]]]] modare"
+$artist = "aaaa_3"
 
 $general = @"
 1girl ahoge flat chest empty eyes closed mouth medium white hair hair between
