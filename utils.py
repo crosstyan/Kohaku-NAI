@@ -235,9 +235,8 @@ def process_image(
         # exif.  (exif just a field in pnginfo in this case)
         items = (image.info or {}).copy()
         if len(items) > 0:
-            # WebP only support save exif
-            # in the metadata. So we put everything in
-            # UserComment field
+            # WebP only support save exif in the metadata. So we put everything
+            # in UserComment field
             #
             # The bad news is that the code AUTOMATIC1111 still can't read from
             # it directly. To address this a custom schema mapping is required
@@ -246,7 +245,14 @@ def process_image(
                 try:
                     comment_str = items["Comment"]
                     # Let's unmarsal then marshal it, just for fun
-                    items["Comment"] = json.loads(comment_str)
+                    json_info = json.loads(comment_str)
+                    # TODO: try to find a proper sampler name
+                    sampler = "Euler a"
+                    items["NovelAIComment"] = json_info
+                    del(items["Comment"])
+                    items["exif comment"] = f"""{items["Description"]}
+Negative prompt: {json_info["uc"]}
+Steps: {json_info["steps"]}, Sampler: {sampler}, CFG scale: {json_info["scale"]}, Seed: {json_info["seed"]}, Size: {image.width}x{image.height}, Clip skip: 2, ENSD: 31337"""
                 except json.JSONDecodeError:
                     pass
             metadata_bytes = piexif.dump(
@@ -277,3 +283,6 @@ def process_image(
         )
     ret.seek(0)
     return ret.read()
+
+
+# geninfo =
